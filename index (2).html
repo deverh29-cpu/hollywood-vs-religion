@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hollywood vs Religion — Class Game</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#394d8d,#080c19 60%);color:#fff;font-family:Arial,sans-serif}.wrap{max-width:1100px;margin:auto;padding:25px}.card{background:#ffffff10;border:1px solid #ffffff20;border-radius:22px;padding:28px;margin-bottom:18px;box-shadow:0 18px 55px #0006}h1{font-size:clamp(44px,7vw,72px);line-height:.95;margin:0 0 15px}h2{font-size:34px;margin:8px 0}.muted{color:#bac4dd;line-height:1.5}.small{font-size:13px;color:#aeb8d2}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.team{background:#111a33;padding:15px;border-radius:14px}.team input{width:100%;padding:10px;margin-top:7px;border:1px solid #ffffff25;border-radius:9px;background:#080d1c;color:#fff}button{border:0;border-radius:12px;padding:13px 17px;margin:5px;background:#8175ff;color:#fff;font-size:16px;font-weight:800;cursor:pointer}button:hover{filter:brightness(1.12);transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}.watch{display:inline-block;text-decoration:none;background:#ff4d67;color:#fff;border-radius:14px;padding:17px 24px;font-size:19px;font-weight:900;margin:12px 0}.video{aspect-ratio:16/9;background:#05070d;border-radius:16px;overflow:hidden;margin:18px 0}.video iframe{width:100%;height:100%;border:0}.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}.choice{text-align:left;background:#202d51;min-height:62px}.timer{float:right;color:#ffd166;font-size:30px;font-weight:900}.bartrack{height:8px;background:#ffffff12;border-radius:9px;margin:15px 0}.bar{height:100%;background:#8175ff;width:0;border-radius:9px}.feedback{background:#ffffff0c;border-radius:14px;padding:18px;margin-top:18px;line-height:1.5}.reveal{background:linear-gradient(135deg,#30256d,#162847);border-radius:14px;padding:20px}.reveal b{color:#ffd166}.scoregrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.score{background:#111a33;border-radius:12px;padding:13px}.pts{float:right;color:#ffd166;font-weight:900}.hidden{display:none}.tag{display:inline-block;padding:7px 11px;border-radius:999px;background:#ffffff12;color:#d2d9e9;margin-bottom:8px}@media(max-width:720px){.grid,.scoregrid,.choices{grid-template-columns:1fr}.wrap{padding:14px}}
+</style>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>window.addEventListener('error',e=>{const el=document.getElementById('joinStatus')||document.getElementById('connectionStatus');if(el)el.textContent='Game error: '+e.message;});</script>
+</head>
+<body>
+<div class="wrap">
+
+<section id="setup" class="card">
+<div class="tag">🎬 CLASSROOM TEAM GAME</div>
+<h1>Hollywood<br>vs. Religion</h1>
+<p class="muted">Teams can join from their own phones using a game code. One person is the host and controls the game.</p><div class="feedback"><b>Important:</b> For phone joining to work, open this page from an <b>HTTPS website</b> (not directly as a file on your computer). Peer-to-peer connections can be blocked when an HTML file is opened with <code>file://</code>.</div>
+<div id="modeChoice">
+<h2>Choose your role</h2>
+<button onclick="showHost()">👑 HOST GAME</button>
+<button onclick="showJoin()">📱 JOIN A TEAM</button>
+</div>
+<div id="hostSetup" class="hidden">
+<h2>Host Game</h2>
+<p class="muted">Share this game code with your class after you create the game.</p>
+<div id="codeBox" class="reveal hidden" style="font-size:28px;text-align:center"><b>GAME CODE</b><br><span id="gameCode">------</span></div>
+<h3>Teams</h3><div id="inputs" class="grid"></div>
+<button onclick="createHostGame()">▶ CREATE GAME</button>
+<p class="small">Players join on their phones at this same HTML page and enter the code. The host starts the game once everyone has joined.</p>
+</div>
+<div id="joinSetup" class="hidden">
+<h2>Join a Team</h2>
+<input id="joinCode" placeholder="Enter 6-character game code" maxlength="6" style="padding:14px;width:100%;max-width:360px;border-radius:10px;border:1px solid #ffffff25;background:#080d1c;color:#fff;font-size:20px;text-transform:uppercase">
+<input id="playerName" placeholder="Your name" maxlength="22" style="padding:14px;width:100%;max-width:360px;border-radius:10px;border:1px solid #ffffff25;background:#080d1c;color:#fff;font-size:20px;margin-top:10px">
+<br><button onclick="joinGame()">📱 JOIN GAME</button>
+<div id="joinStatus" class="small"></div>
+</div>
+<div id="hurtfulExamples" class="feedback" style="margin-top:18px"><h3>⚠️ When Movies Portray Religion Hurtfully</h3><p><b>The Last Temptation of Christ (1988):</b> A fictionalized portrayal of Jesus that was considered deeply offensive or disrespectful by some Christian audiences.</p><p><b>Religulous (2008):</b> A satirical documentary that strongly criticizes and mocks religious beliefs and institutions. Some viewers see it as comedy and criticism, while others find its treatment of religion hurtful or disrespectful.</p><p class="small">These are examples of controversial portrayals, not statements that everyone in a religion will find them offensive.</p></div>
+</section>
+
+<section id="game" class="hidden">
+<div class="card" id="connectionCard"><b id="roleLabel"></b><span id="connectionStatus" class="small" style="float:right"></span><div id="liveCode" class="hidden" style="text-align:center;font-size:38px;font-weight:900;margin-top:14px;color:#ffd166"></div></div>
+<div class="card">
+<span class="tag" id="round"></span><span class="timer" id="timer">0:45</span>
+<h2 id="title"></h2>
+<div class="bartrack"><div class="bar" id="bar"></div></div>
+<p class="muted" id="clipInstruction">The clip will play here for up to 20 seconds. After the clip, click START 20-SECOND TIMER to begin answering.</p>
+<div class="video"><iframe id="video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+<div id="fallback" class="small hidden">If the video is blocked by your school network, use the fallback button below.</div>
+<a id="fallbackWatch" class="watch hidden" target="_blank" rel="noopener">▶ OPEN CLIP</a>
+<div id="timerControl" style="margin:10px 0"><button class="secondary" id="startTimerBtn" onclick="startQuestionTimer()">▶ START 20-SECOND TIMER</button></div>
+<div id="question"></div>
+<div id="feedback" class="feedback hidden"></div>
+<div id="controls"></div>
+</div>
+<div class="card"><h3>🏆 Live Scoreboard</h3><div id="scores" class="scoregrid"></div></div>
+</section>
+
+<section id="final" class="card hidden" style="text-align:center">
+<div style="font-size:65px">🏆</div><h1 id="winner"></h1>
+<p class="muted">The game shows how filmmakers can portray religion as identity, tradition, hope, conflict, doubt, or a source of meaning.</p>
+<div id="finalScores" class="scoregrid"></div>
+<button onclick="location.reload()">↻ PLAY AGAIN</button>
+</section>
+</div>
+
+<script>
+const rounds=[
+{title:"The Exodus",url:"https://www.youtube.com/watch?v=_gtRqWandGc",embed:"https://www.youtube.com/embed/_gtRqWandGc?controls=1",relig:["Judaism","Christianity","Islam","Hinduism"],ri:0,why:"The movie tells the story of Moses and the Israelites leaving Egypt. This is a major story in Judaism and is also important in Christianity and Islam.",portray:"Religion is shown as connected to identity, freedom, and a divine calling."},
+{title:"A Search for Faith",url:"https://www.youtube.com/results?search_query=Life+of+Pi+religion+clip",embed:"https://www.youtube.com/embed/?controls=1",relig:["Buddhism","Hinduism","Judaism","Catholic Christianity"],ri:1,why:"Life of Pi follows Pi, whose religious identity is strongly connected to Hinduism while he also explores Christianity and Islam.",portray:"Religion is shown as a personal search for meaning and faith."},
+{title:"Religious Satire",url:"https://www.youtube.com/results?search_query=Monty+Python+Life+of+Brian+religion+satire+clip",embed:"https://www.youtube.com/embed/?controls=1",relig:["Judaism","Islam","Christianity","Hinduism"],ri:2,why:"Monty Python’s Life of Brian uses satire to make fun of religious beliefs, religious leaders, and the way people can blindly follow movements.",portray:"Christianity and religious practices are portrayed in a deliberately humorous and satirical way, which some viewers consider disrespectful or hurtful."},
+{title:"Tradition & Family",url:"https://www.youtube.com/watch?v=RH3xL8H8tu4",embed:"https://www.youtube.com/embed/RH3xL8H8tu4?controls=1",relig:["Judaism","Hinduism","Islam","Buddhism"],ri:0,why:"Fiddler on the Roof follows a Jewish family and community where religious traditions are closely connected to family and culture.",portray:"Religion is shown as an important part of family identity and tradition."},
+{title:"The Catholic Church",url:"https://www.youtube.com/results?search_query=The+Two+Popes+Catholic+clip",embed:"https://www.youtube.com/embed/?controls=1",relig:["Orthodox Christianity","Catholic Christianity","Judaism","Islam"],ri:1,why:"The Two Popes focuses on Catholic leaders and explores faith, disagreement, forgiveness, tradition, and change within the Church.",portray:"Religion is shown as both personal faith and an institution dealing with disagreement and change."}
+];
+let mode="", peer=null, conn=null, code="", teams=[],scores=[],r=0,stage="waiting",time=20,timer=null,playerTeam="",playerName="",hostReady=false, submissions={};
+for(let i=1;i<=6;i++)document.getElementById("inputs").innerHTML+=`<div class="team"><b>Team ${i}</b><input id="g${i}" value="Team ${i}" maxlength="22"></div>`;
+function showHost(){mode="host";document.getElementById("modeChoice").classList.add("hidden");document.getElementById("joinSetup").classList.add("hidden");document.getElementById("hostSetup").classList.remove("hidden");const el=document.getElementById("connectionStatus"); if(el) el.textContent="";}
+function showJoin(){mode="player";document.getElementById("modeChoice").classList.add("hidden");document.getElementById("hostSetup").classList.add("hidden");document.getElementById("joinSetup").classList.remove("hidden");document.getElementById("joinStatus").textContent="";}
+function randomCode(){const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let x="";for(let i=0;i<6;i++)x+=chars[Math.floor(Math.random()*chars.length)];return x;}
+function createHostGame(){
+ try {
+ teams=[];scores=[];for(let i=1;i<=6;i++){teams.push(document.getElementById("g"+i).value.trim()||"Team "+i);scores.push(0)}
+ code=randomCode(); if(typeof Peer!=="function"){document.getElementById("connectionStatus").textContent="PeerJS could not load. Make sure you are connected to the internet and refresh the page.";return;} peer=new Peer("hvr-"+code,{debug:0,host:"0.peerjs.com",port:443,path:"/",secure:true});
+ peer.on("open",()=>{document.getElementById("gameCode").textContent=code;document.getElementById("codeBox").classList.remove("hidden");document.getElementById("hostSetup").querySelector("button").disabled=true;showGame("HOST");document.getElementById("connectionStatus").textContent=`Waiting for players… GAME CODE: ${code}`;});
+ peer.on("connection",c=>{c.on("open",()=>{c.on("data",data=>handleHostData(c,data));});});
+ peer.on("error",e=>{const el=document.getElementById("connectionStatus"); if(el) el.textContent="Connection error: "+(e.type||"unknown")+". Try creating a new game.";});
+ } catch(e) { alert("Could not create the game: "+e.message); console.error(e); }
+}
+function joinGame(){
+ try {
+ code=document.getElementById("joinCode").value.trim().toUpperCase();playerName=document.getElementById("playerName").value.trim()||"Player";if(code.length!==6){document.getElementById("joinStatus").textContent="Enter the 6-character code.";return}
+ if(typeof Peer!=="function"){document.getElementById("joinStatus").textContent="PeerJS could not load. Make sure you are connected to the internet and refresh the page.";return;} peer=new Peer({debug:0,host:"0.peerjs.com",port:443,path:"/",secure:true});peer.on("open",()=>{conn=peer.connect("hvr-"+code,{reliable:true});conn.on("open",()=>{conn.send({type:"join",name:playerName});document.getElementById("joinStatus").textContent="Joined! Waiting for the host to start…";});conn.on("error",()=>document.getElementById("joinStatus").textContent="Connection failed. Check the code and internet connection.");conn.on("data",handlePlayerData);conn.on("close",()=>document.getElementById("joinStatus").textContent="Disconnected from host.");});peer.on("error",e=>document.getElementById("joinStatus").textContent="Could not join: "+(e.type||"connection error")+". Check the code and internet connection.");
+ } catch(e) { document.getElementById("joinStatus").textContent="Could not join: "+e.message; console.error(e); }
+}
+function showGame(role){document.getElementById("setup").classList.add("hidden");document.getElementById("game").classList.remove("hidden");document.getElementById("roleLabel").textContent=role==="HOST"?"👑 HOST — Share this code with everyone:":"📱 PLAYER — Answer on your phone.";if(role==="HOST"){const lc=document.getElementById("liveCode");lc.textContent=code;lc.classList.remove("hidden");}if(role==="HOST")renderHostLobby();else renderPlayerLobby();}
+function renderHostLobby(){document.getElementById("question").innerHTML=`<h3>Players join with code <b>${code}</b></h3><p class="muted">Teams will appear here as they join. The host assigns each player to a team.</p><div id="players"></div>`;document.getElementById("controls").innerHTML=`<button onclick="startHostRound()">▶ START ROUND 1</button>`;board();}
+function renderPlayerLobby(){document.getElementById("question").innerHTML=`<h3>Waiting for the host…</h3><p class="muted">Your team will be assigned when the host starts the game.</p>`;document.getElementById("controls").innerHTML="";document.getElementById("scores").innerHTML="";}
+function handleHostData(c,d){if(d.type==="join"){let existing=Object.values(submissions).find(x=>x.name===d.name&&x.conn===c);if(!existing){let idx=Object.keys(submissions).length;let teamIndex=idx%teams.length;submissions[c.peer]={name:d.name,team:teamIndex,conn:c};c.send({type:"assigned",team:teams[teamIndex]});renderPlayers();}}else if(d.type==="answer"){let s=submissions[c.peer];if(!s)return;s.answer=d;renderPlayers();}}
+function renderPlayers(){let arr=Object.values(submissions);document.getElementById("players").innerHTML=arr.length?arr.map((x)=>`<div class="team"><b>${x.name}</b> → ${teams[x.team]} ${x.answer?`<span class="small"> • submitted</span>`:"<span class="small"> • waiting</span>"}</div>`).join(""):"<p class='small'>No players have joined yet.</p>";}
+function startHostRound(){if(r>=rounds.length)return finish();clearInterval(timer);stage="relig";submissions=Object.fromEntries(Object.entries(submissions).map(([k,v])=>[k,{...v,answer:null}]));let q=rounds[r];broadcast({type:"round",round:r,title:q.title,embed:q.embed,relig:q.relig,url:q.url});loadHostRound(q);startTimer();}
+function loadHostRound(q){document.getElementById("round").textContent=`ROUND ${r+1} OF ${rounds.length}`;document.getElementById("title").textContent=q.title;document.getElementById("bar").style.width=(r/rounds.length*100)+"%";document.getElementById("video").src=q.embed;document.getElementById("fallbackWatch").href=q.url;document.getElementById("fallback").classList.remove("hidden");document.getElementById("fallbackWatch").classList.remove("hidden");document.getElementById("question").innerHTML=`<h3>Which religion is primarily being portrayed?</h3><p class="small">Players have 20 seconds to answer on their phones.</p>`;document.getElementById("controls").innerHTML=`<button onclick="revealHost()">🔍 REVEAL ANSWERS</button>`;board();}
+function startTimer(){time=20;document.getElementById("timer").textContent="0:20";timer=setInterval(()=>{time--;document.getElementById("timer").textContent="0:"+String(Math.max(0,time)).padStart(2,"0");if(time<=0){clearInterval(timer);document.getElementById("timer").textContent="TIME!";broadcast({type:"timeup"});}},1000)}
+function handlePlayerData(d){if(d.type==="assigned"){playerTeam=d.team;document.getElementById("joinStatus").textContent=`You are on ${playerTeam}. Waiting for the host…`;}
+else if(d.type==="round"){r=d.round;stage="relig";let q=d;document.getElementById("round").textContent=`ROUND ${r+1} OF ${rounds.length}`;document.getElementById("title").textContent=d.title;document.getElementById("video").src=d.embed;document.getElementById("fallbackWatch").href=d.url;document.getElementById("fallback").classList.remove("hidden");document.getElementById("fallbackWatch").classList.remove("hidden");document.getElementById("question").innerHTML=`<h3>Which religion is primarily being portrayed?</h3><div class="choices">${d.relig.map((x,i)=>`<button class="choice" onclick="sendReligion(${i})">${String.fromCharCode(65+i)}. ${x}</button>`).join("")}</div>`;document.getElementById("controls").innerHTML="";time=20;document.getElementById("timer").textContent="0:20";}
+else if(d.type==="portray")showPlayerPortray(d);else if(d.type==="reveal")showPlayerReveal(d);else if(d.type==="scores")renderPlayerScores(d);}
+function sendReligion(i){if(stage!=="relig")return;stage="portray";document.querySelectorAll(".choice").forEach(b=>b.disabled=true);conn.send({type:"answer",kind:"religion",value:i});let q=rounds[r];document.getElementById("question").innerHTML=`<h3>How is religion portrayed?</h3><div class="choices"><button class="choice" onclick="sendPortray(0)">A. Respectfully / positively</button><button class="choice" onclick="sendPortray(1)">B. Disrespectfully / negatively</button><button class="choice" onclick="sendPortray(2)">C. Mixed or complicated</button></div>`;}
+function sendPortray(i){if(stage!=="portray")return;stage="done";document.querySelectorAll(".choice").forEach(b=>b.disabled=true);conn.send({type:"answer",kind:"portray",value:i});document.getElementById("question").innerHTML=`<h3>Answer submitted!</h3><p class="muted">Wait for the host to reveal the results.</p>`;}
+function showPlayerPortray(d){stage="portray";document.getElementById("question").innerHTML=`<h3>How is religion portrayed?</h3><div class="choices"><button class="choice" onclick="sendPortray(0)">A. Respectfully / positively</button><button class="choice" onclick="sendPortray(1)">B. Disrespectfully / negatively</button><button class="choice" onclick="sendPortray(2)">C. Mixed or complicated</button></div>`;}
+function revealHost(){clearInterval(timer);let q=rounds[r];Object.values(submissions).forEach(s=>{if(!s.answer)return;let points=0;if(s.answer.religion===q.ri)points+=2;let correctPortray=(q.ri===2)?1:(q.ri===1&&r===1?2:0);if(s.answer.portray===correctPortray)points+=1;scores[s.team]+=points;});broadcast({type:"reveal",religion:q.ri,why:q.why,portray:q.portray,scores});document.getElementById("feedback").classList.remove("hidden");document.getElementById("feedback").innerHTML=`<div class="reveal"><b>ANSWER</b><br>Religion: <b>${q.relig[q.ri]}</b><br><br>${q.why}<br><br><b>Portrayal:</b> ${q.portray}</div>`;document.getElementById("controls").innerHTML=`<button onclick="nextHostRound()">NEXT ROUND →</button>`;board();}
+function nextHostRound(){r++;if(r>=rounds.length)return finish();document.getElementById("feedback").classList.add("hidden");renderHostLobby();broadcast({type:"lobby"});}
+function showPlayerReveal(d){document.getElementById("feedback").classList.remove("hidden");document.getElementById("feedback").innerHTML=`<div class="reveal"><b>ANSWER</b><br>Religion: <b>${rounds[r].relig[d.relig]}</b><br><br>${d.why}<br><br><b>Portrayal:</b> ${d.portray}</div>`;renderPlayerScores(d);}
+function renderPlayerScores(d){document.getElementById("scores").innerHTML=d.scores.map((x,i)=>`<div class="score"><b>${teams[i]||"Team "+(i+1)}</b><span class="pts">${x} pts</span></div>`).join("");}
+function broadcast(data){Object.values(submissions).forEach(s=>{try{s.conn.send(data)}catch(e){}})}
+function board(id="scores"){document.getElementById(id).innerHTML=teams.map((x,i)=>`<div class="score"><b>${x}</b><span class="pts">${scores[i]} pts</span></div>`).join("");}
+function finish(){clearInterval(timer);document.getElementById("game").classList.add("hidden");document.getElementById("final").classList.remove("hidden");let max=Math.max(...scores),wins=teams.filter((x,i)=>scores[i]===max);document.getElementById("winner").textContent=wins.length>1?`🏆 TIE: ${wins.join(" & ")}`:`🏆 ${wins[0]} WINS!`;document.getElementById("finalScores").innerHTML=teams.map((x,i)=>`<div class="score"><b>${x}</b><span class="pts">${scores[i]} pts</span></div>`).join("");broadcast({type:"final",scores});}
+</script>
+</body></html>
